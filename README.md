@@ -1,38 +1,48 @@
 # 🧠 AI Text Summarizer
 
-A modern AI-powered text summarization web application built using **FastAPI**, **Transformers**, and **PyTorch**. This project uses a fine-tuned **T5 model** to generate concise and meaningful summaries from long conversations or text passages.
+An end-to-end AI-powered text summarization web application built using **FastAPI**, **PyTorch**, and **Hugging Face Transformers**. This project leverages a fine-tuned **T5 (Text-To-Text Transfer Transformer)** model to generate concise, coherent, and contextually meaningful summaries from lengthy conversations and text passages.
 
-Whether you're dealing with lengthy discussions, meeting notes, customer support chats, or articles, this application helps extract the key information in seconds.
+Whether you're working with meeting transcripts, customer support conversations, discussion threads, or long-form text, this application helps extract key information quickly and efficiently.
 
 ---
 
-## ✨ Features
+## 🌟 Project Highlights
 
-✅ AI-powered text summarization using a fine-tuned T5 model
+✨ Fine-tuned T5 Transformer model for abstractive summarization
 
-✅ Fast and lightweight FastAPI backend
+⚡ FastAPI-powered backend with REST API support
 
-✅ Beautiful and responsive user interface
+🎨 Responsive and user-friendly web interface
 
-✅ Real-time summary generation
+🤖 Real-time AI summary generation
 
-✅ Clean and intuitive user experience
+📡 Automatic API documentation via Swagger UI
 
-✅ REST API support for integration with other applications
+🔄 End-to-end frontend and backend integration
+
+📚 Built using modern NLP and Machine Learning workflows
 
 ---
 
 ## 🖼️ Project Preview
 
-The application provides a clean interface where users can:
+The application provides a simple and intuitive workflow:
 
-1. Paste a long conversation or text
+1. Paste a long conversation or text passage
 2. Click the **Summarize** button
-3. Receive an AI-generated summary instantly
+3. Receive an AI-generated summary within seconds
+
+### 🏠 Application Interface
+
+![Homepage](screenshots/homepage.png)
+
+### ✨ Summary Generation
+
+![Summary Output](screenshots/summary-output.png)
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Technology Stack
 
 ### Backend
 
@@ -40,16 +50,19 @@ The application provides a clean interface where users can:
 * 🤗 Hugging Face Transformers
 * 🔥 PyTorch
 * 🐍 Python
+* 📝 Pydantic
 
 ### Frontend
 
-* HTML
-* CSS
+* HTML5
+* CSS3
 * JavaScript
 
-### AI Model
+### AI & NLP
 
-* Fine-tuned T5 Transformer Model
+* T5 Transformer Model
+* SentencePiece Tokenization
+* Dialogue Summarization
 
 ---
 
@@ -59,12 +72,17 @@ The application provides a clean interface where users can:
 text-summarizer/
 │
 ├── app.py
-├── index.html
 ├── requirements.txt
 ├── README.md
-├── saved_summery_model/
+├── .gitignore
+├── index.html
 │
-└── .gitignore
+├── saved_summarizer_model/
+│
+└── screenshots/
+    ├── homepage.png
+    ├── summary-output.png
+    └── swagger-docs.png
 ```
 
 ---
@@ -75,10 +93,9 @@ text-summarizer/
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/text-summarizer.git
+
 cd text-summarizer
 ```
-
----
 
 ### 2️⃣ Create a Virtual Environment
 
@@ -86,29 +103,23 @@ cd text-summarizer
 python -m venv venv
 ```
 
-Activate the environment:
-
 #### Windows
 
 ```bash
 venv\Scripts\activate
 ```
 
-#### Linux / Mac
+#### Linux / macOS
 
 ```bash
 source venv/bin/activate
 ```
-
----
 
 ### 3️⃣ Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
-
----
 
 ### 4️⃣ Run the Application
 
@@ -122,8 +133,6 @@ Once the server starts successfully, open:
 http://127.0.0.1:8000
 ```
 
-in your browser.
-
 ---
 
 ## 📡 API Endpoint
@@ -132,20 +141,28 @@ in your browser.
 
 **POST** `/summarize/`
 
-Request Body:
+### Request
 
 ```json
 {
-    "Dialogue": "Your conversation or text here..."
+  "Dialogue": "Your conversation or text here..."
 }
 ```
 
-Response:
+### Response
 
 ```json
 {
-    "summary": "Generated summary text..."
+  "summary": "Generated summary text..."
 }
+```
+
+### Interactive API Documentation
+
+FastAPI automatically generates API documentation:
+
+```text
+http://127.0.0.1:8000/docs
 ```
 
 ---
@@ -161,7 +178,7 @@ will work on the backend APIs. They agreed to finish
 their tasks before Friday.
 ```
 
-### Output
+### Generated Summary
 
 ```text
 John and Sarah planned their project work, assigning
@@ -173,34 +190,44 @@ to Sarah, with a deadline set for Friday.
 
 ## 📚 What I Learned
 
-This project helped me gain hands-on experience with:
+This project provided practical experience in:
 
-* Building APIs using FastAPI
-* Deploying Transformer models
-* Working with Hugging Face libraries
-* Frontend and backend integration
-* Handling model inference in production-like environments
-* Debugging real-world Python and FastAPI issues
+* Building scalable APIs using FastAPI
+* Fine-tuning and deploying Transformer-based NLP models
+* Working with Hugging Face Transformers
+* Integrating machine learning models into web applications
+* Managing model inference workflows
+* Frontend and backend communication using REST APIs
+* Debugging and troubleshooting production-like environments
+* Structuring end-to-end AI applications
 
 ---
 
 ## 🔮 Future Improvements
 
-* Multiple summary length options
-* File upload support (PDF, TXT, DOCX)
-* Dark/Light mode toggle
-* User authentication
-* Deployment on Render or Railway
-* Docker support
-* Summarization history
+* 📄 PDF and document summarization
+* 📁 File upload support
+* 🌙 Dark/Light mode toggle
+* 👤 User authentication
+* 🐳 Docker containerization
+* ☁️ Cloud deployment (Render, Railway, AWS)
+* 📜 Summary history tracking
+* 🎚️ Adjustable summary lengths
+* 🌍 Multi-language support
+
+---
+
+## 📝 Development Notes
+
+This project combines machine learning, backend development, and frontend integration into a complete AI application. AI-assisted development tools were used during parts of the UI prototyping process to accelerate development. The model integration, FastAPI backend implementation, API design, debugging, testing, and deployment workflow were implemented and customized as part of the development process.
 
 ---
 
 ## 🤝 Contributing
 
-Contributions, suggestions, and feedback are always welcome.
+Contributions, suggestions, and feedback are welcome.
 
-Feel free to fork the repository and submit a pull request.
+If you have ideas for improvements or additional features, feel free to open an issue or submit a pull request.
 
 ---
 
@@ -208,12 +235,12 @@ Feel free to fork the repository and submit a pull request.
 
 If you found this project useful, consider giving it a star ⭐ on GitHub.
 
-It motivates me to continue building and sharing more AI projects.
+Your support helps encourage the development of more open-source AI projects.
 
 ---
 
 ## 👨‍💻 Author
 
-Developed with ❤️ using FastAPI, PyTorch, and Transformers.
+Developed with ❤️ using FastAPI, PyTorch, Transformers, and modern NLP techniques.
 
-**Happy Coding! 🚀**
+Happy Coding! 🚀
