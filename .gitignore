@@ -1,0 +1,17 @@
+# Virtual Environment
+venv/
+venv312/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# VS Code
+.vscode/
+
+# Model files (if very large)
+saved_summery_model/
+
+# OS files
+.DS_Store
+Thumbs.db

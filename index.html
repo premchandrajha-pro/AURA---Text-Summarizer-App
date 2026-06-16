@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura Platform | AI Text Summarizer</title>
+    <style>
+        /* CSS Reset */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg-color: #02001f;
+            --primary: #6C63FF;
+            --secondary: #00D4FF;
+            --accent: #FF4D8D;
+            --text-light: #ffffff;
+            --text-gray: #a0aabf;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --nav-height: 80px;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at top right, rgba(108, 99, 255, 0.15) 0%, transparent 40%),
+                              radial-gradient(circle at bottom left, rgba(0, 212, 255, 0.15) 0%, transparent 40%);
+            background-attachment: fixed;
+            color: var(--text-light);
+            line-height: 1.6;
+            overflow-x: hidden;
+            cursor: none; /* Custom cursor */
+        }
+
+        /* Typography */
+        h1, h2, h3, h4 {
+            line-height: 1.2;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+        }
+
+        h1 { font-size: clamp(3rem, 8vw, 5.5rem); }
+        h2 { font-size: clamp(2rem, 5vw, 3.5rem); }
+        p { color: var(--text-gray); font-size: 1.125rem; }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, var(--secondary), var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: inline-block;
+        }
+
+        /* Custom Cursor */
+        .cursor-dot, .cursor-outline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            z-index: 9999;
+            pointer-events: none;
+        }
+        .cursor-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--secondary);
+        }
+        .cursor-outline {
+            width: 40px;
+            height: 40px;
+            border: 1px solid rgba(0, 212, 255, 0.5);
+            transition: width 0.2s, height 0.2s, background-color 0.2s;
+        }
+        .cursor-hover .cursor-outline {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(0, 212, 255, 0.1);
+            border-color: transparent;
+        }
+
+        /* Mouse Follow Glow */
+        #glow {
+            position: fixed;
+            width: 30vw;
+            height: 30vw;
+            background: radial-gradient(circle, rgba(108, 99, 255, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: -1;
+            transition: left 0.1s ease-out, top 0.1s ease-out;
+        }
+
+        /* Scroll Progress */
+        #scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--secondary), var(--primary), var(--accent));
+            z-index: 10000;
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        /* Back to top */
+        #back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s, transform 0.3s;
+            z-index: 99;
+        }
+        #back-to-top.visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+        #back-to-top:hover {
+            transform: translateY(-5px);
+            border-color: var(--secondary);
+            box-shadow: 0 5px 15px rgba(0, 212, 255, 0.3);
+        }
+
+        /* Navbar */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--nav-height);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 5%;
+            z-index: 1000;
+            transition: background 0.3s, backdrop-filter 0.3s;
+        }
+        nav.scrolled {
+            background: rgba(2, 0, 31, 0.7);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            text-decoration: none;
+            color: var(--text-light);
+        }
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-gray);
+            font-weight: 500;
+            transition: color 0.3s;
+            position: relative;
+        }
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 0;
+            background: var(--secondary);
+            transition: width 0.3s;
+        }
+        .nav-links a:hover {
+            color: var(--text-light);
+        }
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.8rem 1.8rem;
+            border-radius: 30px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: transform 0.3s, box-shadow 0.3s, background 0.3s;
+            cursor: pointer;
+            border: none;
+            font-size: 1rem;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(108, 99, 255, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+        }
+        .btn-secondary {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-light);
+            backdrop-filter: blur(10px);
+        }
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--text-light);
+        }
+
+        /* Layout Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 5%;
+        }
+        section {
+            padding: 100px 0;
+            position: relative;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding-top: var(--nav-height);
+            position: relative;
+        }
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 800px;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: heroFadeIn 1s ease forwards;
+        }
+        @keyframes heroFadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .hero p {
+            margin-bottom: 2.5rem;
+            font-size: 1.25rem;
+        }
+        .hero-btns {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+        
+        .animated-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: 0;
+            animation: float 10s infinite ease-in-out alternate;
+        }
+        .blob-1 {
+            width: 40vw;
+            height: 40vw;
+            background: rgba(108, 99, 255, 0.15);
+            top: 10%;
+            left: -10%;
+        }
+        .blob-2 {
+            width: 35vw;
+            height: 35vw;
+            background: rgba(0, 212, 255, 0.15);
+            bottom: 5%;
+            right: -10%;
+            animation-delay: -5s;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+            100% { transform: translate(50px, -50px) rotate(10deg) scale(1.1); }
+        }
+
+        /* Section Headings */
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+        .section-header h2 {
+            margin-bottom: 1rem;
+        }
+
+        /* Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Summarizer Section */
+        .summarizer-section {
+            padding-top: 0; /* Attach closely to hero */
+            margin-top: -60px;
+        }
+        .summarizer-container {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 3rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            position: relative;
+            z-index: 10;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .textarea-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .summarizer-input {
+            width: 100%;
+            min-height: 250px;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 16px;
+            padding: 1.5rem;
+            color: var(--text-light);
+            font-family: inherit;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            resize: vertical;
+            transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
+        }
+        .summarizer-input::placeholder {
+            color: rgba(255,255,255,0.4);
+        }
+        .summarizer-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(0,0,0,0.6);
+            box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2);
+        }
+        .summarize-btn-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 1rem;
+        }
+        .btn-summarize {
+            font-size: 1.2rem;
+            padding: 1.2rem 4rem;
+            border-radius: 50px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s, background 0.3s, opacity 0.3s;
+            font-weight: 800;
+            letter-spacing: 1px;
+            box-shadow: 0 10px 25px rgba(108, 99, 255, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-summarize:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(0, 212, 255, 0.5);
+        }
+        .btn-summarize:active {
+            transform: translateY(1px);
+        }
+        .btn-summarize:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .loader {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .summarizer-output-wrapper {
+            display: none;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 2rem;
+            animation: slideUpFade 0.5s ease forwards;
+            background: rgba(108, 99, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 1rem;
+        }
+        .output-header h3 {
+            margin: 0;
+            font-size: 1.3rem;
+            color: var(--secondary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .copy-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: var(--text-light);
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .copy-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+        .copy-btn:active {
+            transform: translateY(0);
+        }
+        .summarizer-result-text {
+            font-size: 1.15rem;
+            line-height: 1.8;
+            color: #fff;
+            white-space: pre-wrap;
+        }
+
+        /* Features Section */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        .feature-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 2.5rem;
+            transition: transform 0.4s, background 0.4s, border-color 0.4s;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at top right, rgba(108, 99, 255, 0.15), transparent 60%);
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+        .feature-card:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+            transition: transform 0.3s;
+        }
+        .feature-card:hover .feature-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Statistics (Parallax container) */
+        .stats-section {
+            position: relative;
+            background: linear-gradient(rgba(2, 0, 31, 0.8), rgba(2, 0, 31, 0.8)),
+                        radial-gradient(circle at center, rgba(108, 99, 255, 0.2) 0%, transparent 60%);
+            background-attachment: fixed;
+            border-top: 1px solid var(--glass-border);
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            text-align: center;
+        }
+        .stat-item {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 3rem 2rem;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s;
+        }
+        .stat-item:hover {
+            transform: translateY(-5px);
+            border-color: var(--secondary);
+        }
+        .stat-item h4 {
+            font-size: 3.5rem;
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Showcase */
+        .showcase-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+        }
+        .showcase-card {
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            aspect-ratio: 16/10;
+            background: #111;
+            cursor: pointer;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+        }
+        .showcase-bg {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-size: cover;
+            background-position: center;
+            transition: transform 0.6s cubic-bezier(0.2, 1, 0.3, 1);
+        }
+        /* Using CSS gradients as placeholders for premium images */
+        .sc-1 { background: linear-gradient(135deg, rgba(255, 77, 141, 0.8), rgba(108, 99, 255, 0.8)), repeating-linear-gradient(45deg, #111 0, #111 2px, transparent 2px, transparent 8px); }
+        .sc-2 { background: linear-gradient(135deg, rgba(0, 212, 255, 0.8), rgba(108, 99, 255, 0.8)), radial-gradient(circle at 50% 50%, #222 2px, transparent 2px) 0 0 / 20px 20px; }
+        .sc-3 { background: linear-gradient(135deg, rgba(255, 77, 141, 0.8), rgba(255, 171, 0, 0.8)), linear-gradient(90deg, #111 1px, transparent 1px) 0 0 / 20px 20px; }
+        
+        .showcase-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.2) 50%, transparent 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 2.5rem;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            backdrop-filter: blur(2px);
+        }
+        .showcase-card:hover .showcase-bg {
+            transform: scale(1.1);
+        }
+        .showcase-card:hover .showcase-overlay {
+            opacity: 1;
+        }
+        .showcase-overlay h3 { margin-bottom: 0.5rem; font-size: 1.8rem; }
+        .showcase-overlay p { color: var(--secondary); font-weight: 600; }
+
+        /* Testimonials */
+        .testim-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        .testim-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 2.5rem;
+            border-radius: 20px;
+            position: relative;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s;
+        }
+        .testim-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255,255,255,0.15);
+        }
+        .quote-icon {
+            font-size: 5rem;
+            position: absolute;
+            top: -20px;
+            right: 20px;
+            opacity: 0.05;
+            font-family: Georgia, serif;
+            color: var(--text-light);
+        }
+        .testim-text {
+            font-size: 1.15rem;
+            font-style: italic;
+            margin-bottom: 2rem;
+            line-height: 1.8;
+        }
+        .testim-author {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            border-top: 1px solid var(--glass-border);
+            padding-top: 1.5rem;
+        }
+        .avatar {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #fff;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .av-1 { background: linear-gradient(135deg, #FF4D8D, #6C63FF); }
+        .av-2 { background: linear-gradient(135deg, #00D4FF, #6C63FF); }
+        .av-3 { background: linear-gradient(135deg, #FFAB00, #FF4D8D); }
+
+        .testim-author h4 { margin-bottom: 0.2rem; font-size: 1.1rem; }
+        .testim-author p { font-size: 0.9rem; margin: 0; }
+
+        /* Pricing */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            align-items: center;
+        }
+        .price-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 3rem 2rem;
+            border-radius: 24px;
+            text-align: center;
+            transition: transform 0.4s, border-color 0.4s;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        .price-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(255,255,255,0.2);
+        }
+        .price-card.popular {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+            border: 2px solid var(--primary);
+            padding: 4rem 2rem;
+            box-shadow: 0 15px 35px rgba(108, 99, 255, 0.15);
+        }
+        .price-badge {
+            position: absolute;
+            top: 25px;
+            right: -35px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            padding: 8px 45px;
+            transform: rotate(45deg);
+            font-size: 0.85rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: #fff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .price {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin: 1.5rem 0;
+            color: var(--text-light);
+        }
+        .price span {
+            font-size: 1.1rem;
+            color: var(--text-gray);
+            font-weight: 500;
+        }
+        .price-features {
+            list-style: none;
+            margin-bottom: 2.5rem;
+            text-align: left;
+        }
+        .price-features li {
+            margin-bottom: 1.2rem;
+            color: var(--text-gray);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .check-icon {
+            color: var(--secondary);
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .btn-pricing { width: 100%; }
+
+        /* FAQ */
+        .faq-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .faq-item {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            backdrop-filter: blur(5px);
+            transition: background 0.3s;
+        }
+        .faq-item:hover {
+            background: rgba(255,255,255,0.06);
+        }
+        .faq-q {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-weight: 600;
+            padding: 1.5rem;
+        }
+        .faq-q span {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s;
+        }
+        .faq-item.active .faq-q span {
+            background: var(--primary);
+            color: #fff;
+        }
+        .faq-a {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding 0.4s ease;
+            color: var(--text-gray);
+            padding: 0 1.5rem;
+        }
+        .faq-item.active .faq-a {
+            max-height: 300px;
+            padding-bottom: 1.5rem;
+        }
+
+        /* Contact */
+        .contact-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 4rem;
+            border-radius: 30px;
+            backdrop-filter: blur(15px);
+            position: relative;
+            overflow: hidden;
+        }
+        .contact-container::after {
+            content: '';
+            position: absolute;
+            bottom: -50px;
+            right: -50px;
+            width: 200px;
+            height: 200px;
+            background: var(--accent);
+            filter: blur(100px);
+            opacity: 0.2;
+            z-index: -1;
+        }
+        .contact-info h3 { font-size: 2rem; }
+        .contact-detail {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 1.5rem;
+        }
+        .contact-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: var(--secondary);
+        }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-control {
+            width: 100%;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--glass-border);
+            padding: 1.2rem;
+            border-radius: 12px;
+            color: var(--text-light);
+            font-family: inherit;
+            font-size: 1rem;
+            transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
+        }
+        .form-control::placeholder { color: #666; }
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(0,0,0,0.4);
+            box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.15);
+        }
+        textarea.form-control {
+            min-height: 160px;
+            resize: vertical;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--glass-border);
+            padding: 5rem 5% 2rem;
+            background: rgba(2, 0, 31, 0.95);
+            position: relative;
+        }
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 4rem;
+            margin-bottom: 4rem;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .footer-col h4 {
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+        }
+        .footer-links { list-style: none; }
+        .footer-links li { margin-bottom: 1rem; }
+        .footer-links a {
+            text-decoration: none;
+            color: var(--text-gray);
+            transition: color 0.3s, transform 0.3s;
+            display: inline-block;
+        }
+        .footer-links a:hover {
+            color: var(--secondary);
+            transform: translateX(5px);
+        }
+        .social-icons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .social-icons a {
+            display: inline-flex;
+            width: 45px; height: 45px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: var(--text-light);
+            font-size: 1.2rem;
+            transition: background 0.3s, transform 0.3s, border-color 0.3s;
+        }
+        .social-icons a:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            transform: translateY(-5px);
+        }
+        .footer-bottom {
+            text-align: center;
+            color: var(--text-gray);
+            padding-top: 2rem;
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .hero h1 { font-size: 4rem; }
+            .footer-grid { grid-template-columns: 1fr 1fr; gap: 2rem; }
+        }
+        @media (max-width: 768px) {
+            :root { --nav-height: 70px; }
+            .nav-links { display: none; }
+            .hero h1 { font-size: 3rem; }
+            .hero-btns { flex-direction: column; width: 100%; max-width: 300px; margin: 0 auto; }
+            .btn { width: 100%; }
+            section { padding: 70px 0; }
+            .summarizer-container { padding: 1.5rem; margin-top: -30px; }
+            .btn-summarize { width: 100%; justify-content: center; padding: 1rem; }
+            .contact-container { grid-template-columns: 1fr; padding: 2.5rem 1.5rem; }
+            .footer-grid { grid-template-columns: 1fr; }
+            .footer-bottom { flex-direction: column; gap: 1rem; text-align: center; }
+            #glow, .cursor-dot, .cursor-outline { display: none; } /* Disable custom cursor on mobile */
+            body { cursor: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Custom Cursor -->
+    <div class="cursor-dot"></div>
+    <div class="cursor-outline"></div>
+
+    <!-- Mouse Glow -->
+    <div id="glow"></div>
+
+    <!-- Scroll Progress -->
+    <div id="scroll-progress"></div>
+
+    <!-- Background Blobs -->
+    <div class="animated-blob blob-1"></div>
+    <div class="animated-blob blob-2"></div>
+
+    <!-- Navbar -->
+    <nav id="navbar">
+        <a href="#" class="logo hover-target">Aura<span class="gradient-text">.</span></a>
+        <ul class="nav-links">
+            <li><a href="#summarizer" class="hover-target">Summarizer</a></li>
+            <li><a href="#features" class="hover-target">Features</a></li>
+            <li><a href="#showcase" class="hover-target">Showcase</a></li>
+            <li><a href="#pricing" class="hover-target">Pricing</a></li>
+            <li><a href="#faq" class="hover-target">FAQ</a></li>
+        </ul>
+        <a href="#summarizer" class="btn btn-secondary hover-target">Try It Free</a>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <h1>Summarize Text with <br><span class="gradient-text">Aura AI</span></h1>
+            <p>Experience the next generation of natural language processing. Instantly condense long articles, documents, and reports into clear, concise summaries.</p>
+            <div class="hero-btns">
+                <a href="#summarizer" class="btn btn-primary hover-target">Start Summarizing</a>
+                <a href="#features" class="btn btn-secondary hover-target">Explore Features</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Summarizer Application Section -->
+    <section id="summarizer" class="container summarizer-section">
+        <div class="summarizer-container fade-in">
+            <div class="section-header" style="margin-bottom: 2rem;">
+                <h2>AI <span class="gradient-text">Text Summarizer</span></h2>
+                <p style="margin-top: 10px;">Paste your long text below and get an instant, intelligent summary.</p>
+            </div>
+            
+            <div class="textarea-wrapper">
+                <textarea id="inputText" class="summarizer-input hover-target" placeholder="Paste your article, document, or text here..."></textarea>
+            </div>
+            
+            <div class="summarize-btn-wrapper">
+                <button id="summarizeBtn" class="btn-summarize hover-target">
+                    <span>Summarize Text</span>
+                    <div class="loader" id="loader"></div>
+                </button>
+            </div>
+
+            <div id="outputWrapper" class="summarizer-output-wrapper">
+                <div class="output-header">
+                    <h3>✨ Your Summary</h3>
+                    <button id="copyBtn" class="copy-btn hover-target">Copy to Clipboard</button>
+                </div>
+                <div id="outputText" class="summarizer-result-text"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="container">
+        <div class="section-header fade-in">
+            <h2>Powerful <span class="gradient-text">Capabilities</span></h2>
+            <p>Everything you need to process text faster, built right in.</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card fade-in hover-target">
+                <div class="feature-icon">⚡</div>
+                <h3>Lightning Fast</h3>
+                <p>Get accurate summaries in milliseconds. Optimized for ultimate performance on large texts.</p>
+            </div>
+            <div class="feature-card fade-in hover-target">
+                <div class="feature-icon">🔒</div>
+                <h3>Enterprise Security</h3>
+                <p>Your text is never stored. Bank-grade encryption ensures your data remains completely private.</p>
+            </div>
+            <div class="feature-card fade-in hover-target">
+                <div class="feature-icon">🧠</div>
+                <h3>Context Aware</h3>
+                <p>Our advanced LLM understands context and nuance, preserving the original meaning perfectly.</p>
+            </div>
+            <div class="feature-card fade-in hover-target">
+                <div class="feature-icon">🌐</div>
+                <h3>Multilingual</h3>
+                <p>Automatically detect and summarize text in over 50 different languages natively.</p>
+            </div>
+            <div class="feature-card fade-in hover-target">
+                <div class="feature-icon">📊</div>
+                <h3>Adjustable Length</h3>
+                <p>Control exactly how long you want your summary to be—from bullet points to paragraphs.</p>
+            </div>
+            <div class="feature-card fade-in hover-target">
+                <div class="feature-icon">🔗</div>
+                <h3>API Access</h3>
+                <p>Integrate our summarization engine directly into your own apps with our robust API.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Statistics Section -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="stats-grid fade-in">
+                <div class="stat-item hover-target">
+                    <h4 class="counter" data-target="99.99">0</h4>
+                    <p>Accuracy %</p>
+                </div>
+                <div class="stat-item hover-target">
+                    <h4 class="counter" data-target="50">0</h4>
+                    <p>Supported Languages</p>
+                </div>
+                <div class="stat-item hover-target">
+                    <h4 class="counter" data-target="15">0</h4>
+                    <p>Million Summaries</p>
+                </div>
+                <div class="stat-item hover-target">
+                    <h4 class="counter" data-target="2.5">0</h4>
+                    <p>Billion Words Processed</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Showcase Section -->
+    <section id="showcase" class="container">
+        <div class="section-header fade-in">
+            <h2>Stunning <span class="gradient-text">Showcase</span></h2>
+            <p>See what modern companies are building with Aura.</p>
+        </div>
+        <div class="showcase-grid">
+            <div class="showcase-card fade-in hover-target">
+                <div class="showcase-bg sc-1"></div>
+                <div class="showcase-overlay">
+                    <h3>Legal Tech</h3>
+                    <p>Summarizing complex contracts instantly</p>
+                </div>
+            </div>
+            <div class="showcase-card fade-in hover-target">
+                <div class="showcase-bg sc-2"></div>
+                <div class="showcase-overlay">
+                    <h3>Media & Publishing</h3>
+                    <p>Automated news digest generation</p>
+                </div>
+            </div>
+            <div class="showcase-card fade-in hover-target">
+                <div class="showcase-bg sc-3"></div>
+                <div class="showcase-overlay">
+                    <h3>Education</h3>
+                    <p>Study guides created in seconds</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="container">
+        <div class="section-header fade-in">
+            <h2>Loved by <span class="gradient-text">Thousands</span></h2>
+            <p>Don't just take our word for it.</p>
+        </div>
+        <div class="testim-grid">
+            <div class="testim-card fade-in hover-target">
+                <div class="quote-icon">"</div>
+                <p class="testim-text">Aura has completely transformed how our team processes legal documents. The speed and accuracy are simply unparalleled.</p>
+                <div class="testim-author">
+                    <div class="avatar av-1">SJ</div>
+                    <div>
+                        <h4>Sarah Jenkins</h4>
+                        <p>Senior Partner at LawFirm</p>
+                    </div>
+                </div>
+            </div>
+            <div class="testim-card fade-in hover-target">
+                <div class="quote-icon">"</div>
+                <p class="testim-text">We use the API to generate quick reads for our newsletter. It's easily the most reliable summarization tool we've ever used.</p>
+                <div class="testim-author">
+                    <div class="avatar av-2">MR</div>
+                    <div>
+                        <h4>Michael Ross</h4>
+                        <p>Editor-in-Chief, StartupX</p>
+                    </div>
+                </div>
+            </div>
+            <div class="testim-card fade-in hover-target">
+                <div class="quote-icon">"</div>
+                <p class="testim-text">As a student, this tool saves me hours of reading every week. It consistently highlights exactly what I need to know.</p>
+                <div class="testim-author">
+                    <div class="avatar av-3">EL</div>
+                    <div>
+                        <h4>Emma Lin</h4>
+                        <p>Graduate Student</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="container">
+        <div class="section-header fade-in">
+            <h2>Simple, <span class="gradient-text">Transparent Pricing</span></h2>
+            <p>Choose the perfect plan that fits your scale.</p>
+        </div>
+        <div class="pricing-grid">
+            <div class="price-card fade-in">
+                <h3>Starter</h3>
+                <div class="price">$9<span>/mo</span></div>
+                <ul class="price-features">
+                    <li><span class="check-icon">✓</span> 50 Summaries / day</li>
+                    <li><span class="check-icon">✓</span> Up to 5,000 words / input</li>
+                    <li><span class="check-icon">✓</span> Standard speed</li>
+                    <li><span class="check-icon">✓</span> Email support</li>
+                </ul>
+                <a href="#contact" class="btn btn-secondary btn-pricing hover-target">Get Starter</a>
+            </div>
+            <div class="price-card popular fade-in">
+                <div class="price-badge">POPULAR</div>
+                <h3>Pro</h3>
+                <div class="price">$29<span>/mo</span></div>
+                <ul class="price-features">
+                    <li><span class="check-icon">✓</span> Unlimited Summaries</li>
+                    <li><span class="check-icon">✓</span> Up to 50,000 words / input</li>
+                    <li><span class="check-icon">✓</span> Lightning fast processing</li>
+                    <li><span class="check-icon">✓</span> Priority 24/7 support</li>
+                    <li><span class="check-icon">✓</span> Export to PDF/Word</li>
+                </ul>
+                <a href="#contact" class="btn btn-primary btn-pricing hover-target">Get Pro</a>
+            </div>
+            <div class="price-card fade-in">
+                <h3>Enterprise</h3>
+                <div class="price">Custom</div>
+                <ul class="price-features">
+                    <li><span class="check-icon">✓</span> Unlimited everything</li>
+                    <li><span class="check-icon">✓</span> Full API access</li>
+                    <li><span class="check-icon">✓</span> Custom fine-tuning</li>
+                    <li><span class="check-icon">✓</span> SSO & Advanced Security</li>
+                </ul>
+                <a href="#contact" class="btn btn-secondary btn-pricing hover-target">Contact Sales</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="container">
+        <div class="section-header fade-in">
+            <h2>Frequently Asked <span class="gradient-text">Questions</span></h2>
+            <p>Everything you need to know about the platform and billing.</p>
+        </div>
+        <div class="faq-container fade-in">
+            <div class="faq-item">
+                <div class="faq-q hover-target">How accurate is the summarization? <span>+</span></div>
+                <div class="faq-a">Our AI models are trained on billions of parameters to ensure extremely high accuracy and context preservation. It consistently highlights the most crucial information while discarding filler content.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q hover-target">Do you store my text? <span>+</span></div>
+                <div class="faq-a">No. We have a strict zero-retention policy. The text you paste is processed entirely in memory and immediately discarded. We never use your data to train our models.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q hover-target">What payment methods do you accept? <span>+</span></div>
+                <div class="faq-a">We securely accept all major credit cards (Visa, Mastercard, American Express), PayPal, and direct wire transfers for annual Enterprise plans.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q hover-target">Is there a limit on input length? <span>+</span></div>
+                <div class="faq-a">Free and Starter plans support up to 5,000 words per request. Our Pro plan extends this to 50,000 words, allowing you to summarize entire books or lengthy reports in one go.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="container">
+        <div class="section-header fade-in">
+            <h2>Get in <span class="gradient-text">Touch</span></h2>
+            <p>We'd love to hear from you. Reach out to our expert team.</p>
+        </div>
+        <div class="contact-container fade-in">
+            <div class="contact-info">
+                <h3>Let's talk about your vision</h3>
+                <p style="margin: 1.5rem 0; color: var(--text-gray);">Our team of technical experts is ready to help you build the future. Fill out the form, and we'll get back to you within 24 hours.</p>
+                <div style="margin-top: 2.5rem;">
+                    <div class="contact-detail">
+                        <div class="contact-icon">✉</div>
+                        <div>
+                            <p style="font-size: 0.9rem; color: var(--text-gray);">Email Us</p>
+                            <p style="font-weight: 600;">hello@aura.co</p>
+                        </div>
+                    </div>
+                    <div class="contact-detail">
+                        <div class="contact-icon">☎</div>
+                        <div>
+                            <p style="font-size: 0.9rem; color: var(--text-gray);">Call Us</p>
+                            <p style="font-weight: 600;">+1 (555) 123-4567</p>
+                        </div>
+                    </div>
+                    <div class="contact-detail">
+                        <div class="contact-icon">📍</div>
+                        <div>
+                            <p style="font-size: 0.9rem; color: var(--text-gray);">Visit Us</p>
+                            <p style="font-weight: 600;">100 Innovation Dr, SF, CA</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="contact-form">
+                <form onsubmit="event.preventDefault();">
+                    <div class="form-group">
+                        <input type="text" class="form-control hover-target" placeholder="Your Full Name" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" class="form-control hover-target" placeholder="Your Work Email" required>
+                    </div>
+                    <div class="form-group">
+                        <textarea class="form-control hover-target" placeholder="How can we help you achieve your goals?" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary hover-target" style="width: 100%; padding: 1.2rem; font-size: 1.1rem;">Send Message</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-grid">
+            <div class="footer-col">
+                <h4 style="font-size: 1.8rem; font-weight: 800;">Aura<span class="gradient-text">.</span></h4>
+                <p style="color: var(--text-gray); margin-bottom: 1.5rem;">Building the next generation of premium AI tools for forward-thinking teams.</p>
+                <div class="social-icons">
+                    <a href="#" class="hover-target">𝕏</a>
+                    <a href="#" class="hover-target">in</a>
+                    <a href="#" class="hover-target">GH</a>
+                    <a href="#" class="hover-target">IG</a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h4>Product</h4>
+                <ul class="footer-links">
+                    <li><a href="#summarizer">Summarizer</a></li>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#pricing">Pricing</a></li>
+                    <li><a href="#showcase">API Access</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Company</h4>
+                <ul class="footer-links">
+                    <li><a href="#">About Us</a></li>
+                    <li><a href="#">Careers</a></li>
+                    <li><a href="#">Blog</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Legal</h4>
+                <ul class="footer-links">
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                    <li><a href="#">Cookie Policy</a></li>
+                    <li><a href="#">Security</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Aura AI Inc. All rights reserved.</p>
+            <p style="display: flex; gap: 1.5rem;">
+                <a href="#" style="color: var(--text-gray); text-decoration: none;" class="hover-target">Status</a>
+                <a href="#" style="color: var(--text-gray); text-decoration: none;" class="hover-target">Sitemap</a>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Back to top button -->
+    <div id="back-to-top" class="hover-target">↑</div>
+
+    <!-- Scripts -->
+    <script>
+        // Custom Cursor Logic
+        const cursorDot = document.querySelector('.cursor-dot');
+        const cursorOutline = document.querySelector('.cursor-outline');
+        const glow = document.getElementById('glow');
+        
+        // Only run custom cursor on non-touch devices
+        if (window.matchMedia("(pointer: fine)").matches) {
+            window.addEventListener('mousemove', (e) => {
+                const posX = e.clientX;
+                const posY = e.clientY;
+                
+                cursorDot.style.left = `${posX}px`;
+                cursorDot.style.top = `${posY}px`;
+                
+                cursorOutline.animate({
+                    left: `${posX}px`,
+                    top: `${posY}px`
+                }, { duration: 150, fill: "forwards" });
+                
+                glow.style.left = `${posX}px`;
+                glow.style.top = `${posY}px`;
+            });
+
+            const hoverTargets = document.querySelectorAll('.hover-target, a, button, input, textarea');
+            hoverTargets.forEach(target => {
+                target.addEventListener('mouseenter', () => {
+                    document.body.classList.add('cursor-hover');
+                });
+                target.addEventListener('mouseleave', () => {
+                    document.body.classList.remove('cursor-hover');
+                });
+            });
+        }
+
+        // Scroll Progress & Sticky Navbar
+        const scrollProgress = document.getElementById('scroll-progress');
+        const navbar = document.getElementById('navbar');
+        const backToTop = document.getElementById('back-to-top');
+        
+        window.addEventListener('scroll', () => {
+            // Scroll Progress Indicator
+            const totalScroll = document.documentElement.scrollTop;
+            const windowHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scroll = `${totalScroll / windowHeight * 100}%`;
+            scrollProgress.style.width = scroll;
+            
+            // Sticky Navbar Glass Effect
+            if (totalScroll > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+            
+            // Back to Top Button Visibility
+            if (totalScroll > 500) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
+            }
+        });
+
+        // Smooth Scroll to Top
+        backToTop.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+
+        // Intersection Observer for Fade-in Animations
+        const fadeElements = document.querySelectorAll('.fade-in');
+        const fadeObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    fadeObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.15, rootMargin: "0px 0px -50px 0px" });
+
+        fadeElements.forEach(el => fadeObserver.observe(el));
+
+        // Animated Number Counters
+        const counters = document.querySelectorAll('.counter');
+        const counterObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const counter = entry.target;
+                    const target = +counter.getAttribute('data-target');
+                    const duration = 2000; 
+                    const increment = target / (duration / 16);
+                    
+                    let current = 0;
+                    const updateCounter = () => {
+                        current += increment;
+                        if (current < target) {
+                            counter.innerText = target % 1 !== 0 ? current.toFixed(2) : Math.ceil(current);
+                            requestAnimationFrame(updateCounter);
+                        } else {
+                            counter.innerText = target;
+                        }
+                    };
+                    updateCounter();
+                    counterObserver.unobserve(counter);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        counters.forEach(counter => counterObserver.observe(counter));
+
+        // Interactive FAQ Accordion
+        const faqItems = document.querySelectorAll('.faq-item');
+        faqItems.forEach(item => {
+            const question = item.querySelector('.faq-q');
+            question.addEventListener('click', () => {
+                const isOpen = item.classList.contains('active');
+                
+                // Close all other items
+                faqItems.forEach(otherItem => {
+                    otherItem.classList.remove('active');
+                    otherItem.querySelector('.faq-q span').innerText = '+';
+                    otherItem.querySelector('.faq-q span').style.transform = 'rotate(0deg)';
+                });
+                
+                // Toggle clicked item
+                if (!isOpen) {
+                    item.classList.add('active');
+                    const icon = item.querySelector('.faq-q span');
+                    icon.innerText = '−';
+                    icon.style.transform = 'rotate(180deg)';
+                }
+            });
+        });
+
+// Summarizer Logic
+        const summarizeBtn = document.getElementById('summarizeBtn');
+        const inputText = document.getElementById('inputText');
+        const outputWrapper = document.getElementById('outputWrapper');
+        const outputText = document.getElementById('outputText');
+        const loader = document.getElementById('loader');
+        const copyBtn = document.getElementById('copyBtn');
+
+        summarizeBtn.addEventListener('click', async () => {
+
+            const text = inputText.value.trim();
+
+            if (!text) {
+                alert('Please enter some text to summarize first.');
+                inputText.focus();
+                return;
+            }
+
+            loader.style.display = 'inline-block';
+            summarizeBtn.disabled = true;
+            outputWrapper.style.display = 'none';
+
+            try {
+
+                const response = await fetch('/summarize/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        Dialogue: text
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to generate summary');
+                }
+
+                const data = await response.json();
+
+                outputText.innerText = data.summary;
+
+                outputWrapper.style.display = 'flex';
+
+                setTimeout(() => {
+                    outputWrapper.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+                }, 100);
+
+            } catch (error) {
+
+                console.error(error);
+
+                outputText.innerText =
+                    "Error generating summary. Check the backend server.";
+
+                outputWrapper.style.display = 'flex';
+            }
+
+            loader.style.display = 'none';
+            summarizeBtn.disabled = false;
+        });
+
+        // Copy functionality
+        copyBtn.addEventListener('click', () => {
+
+            navigator.clipboard.writeText(outputText.innerText)
+                .then(() => {
+
+                    const originalText = copyBtn.innerText;
+
+                    copyBtn.innerText = '✓ Copied!';
+                    copyBtn.style.color = 'var(--secondary)';
+                    copyBtn.style.borderColor = 'var(--secondary)';
+
+                    setTimeout(() => {
+                        copyBtn.innerText = originalText;
+                        copyBtn.style.color = '';
+                        copyBtn.style.borderColor = '';
+                    }, 2000);
+                });
+        });
+    </script>
+</body>
+</html>
